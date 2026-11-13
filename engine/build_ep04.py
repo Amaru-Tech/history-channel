@@ -21,7 +21,7 @@ SCENES = [
   ("Plants, animals and germs crossed the Atlantic, in both directions.", "Plants, animals and germs crossed the Atlantic, in both directions.")]),
  ("GOING EAST", [
   ("From the Americas came maize, potatoes, beans, tomatoes, peanuts, tobacco and cacao, the bean behind chocolate.", "From the Americas: maize, potatoes, beans, tomatoes, peanuts, tobacco and cacao."),
-  ("By around fifteen hundred, the Portuguese had carried the chili pepper to India.", "By around 1500, the Portuguese had carried the chili pepper to India.")]),
+  ("In the fifteen hundreds, the Portuguese carried the chili pepper to India.", "In the 1500s, the Portuguese carried the chili pepper to India.")]),
  ("GOING WEST", [
   ("The Spanish brought wheat, olives and grapevines.", "The Spanish brought wheat, olives and grapevines."),
   ("Columbus's second voyage carried horses, cattle, pigs and chickens.", "Columbus's second voyage carried horses, cattle, pigs and chickens."),
@@ -167,7 +167,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
             for k, nm in enumerate(("PEANUTS", "TOBACCO", "CACAO")): label(d, nm, 148 + k * 66 * 2 - 4, 500, WHITE, K) if k + 4 < n else None
         else:
             put(c, "ship", 40 + prog * 160, 700 + bob(f, 3, 0.1)); put(c, "c_chili", 380, 560, sc=4)
-            label(d, "PORTUGUESE", 120 + prog * 160, 520, GOLD); label(d, "CHILI -> INDIA, c.1500", 270, 250, K, YEL, F16)
+            label(d, "PORTUGUESE", 120 + prog * 160, 520, GOLD); label(d, "CHILI -> INDIA, 1500s", 270, 250, K, YEL, F16)
     elif i == 3:
         label(d, "OLD WORLD -> AMERICAS", 270, 140, K, YEL, F16)
         if li == 0:
