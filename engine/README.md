@@ -19,3 +19,9 @@ Retro 16-bit pixel-art history Shorts (1080x1920, 30 fps, English narration, chi
 3. Write make_bg and draw_scene for the new story. Reuse sprites in SP; add new ones with the same 52x84 outline() style. Every character and place gets a name label. Use maps for geography.
 4. python3 buildN.py check  -> out*/check*.png, inspect a contact sheet, fix overlaps.
 5. python3 buildN.py        -> final mp4. Keep total 70-115 s. Audio peak must stay below -1 dB.
+
+## Visual quality checklist (from Jorge's review of episode 5)
+- Fill every frame: background life (town, dock, clouds, gulls, torches, crowds, props) and some motion in each line. Avoid empty skies and lone characters.
+- Ships float in water. Never put a hull on sand or grass; a grounded ship sits in shallow water (use shallow() and foam()).
+- Voyage routes on maps start and end exactly on a coastline vertex or a city dot, never in open sea or inland. Use region_map() and AMER_D from build_ep05.py for Caribbean and Central America close-ups.
+- Labels never overlap each other, map titles or sprites. Keep scale consistent: main characters sc=2.

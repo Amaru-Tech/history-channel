@@ -31,7 +31,7 @@ SCENES = [
   ("The storm sank about twenty ships of the fleet. Bobadeeya went down with them.", "The storm sank about 20 ships of the fleet. Bobadilla went down with them.")]),
  ("CASTAWAYS", [
   ("Columbus explored Central America, from Honduras to Panama.", "Columbus explored Central America, from Honduras to Panama."),
-  ("But worms ate through his ships. In fifteen oh three, he beached them in Jamaica.", "But worms ate through his ships. In 1503, he beached them in Jamaica."),
+  ("But worms ate through his ships. In fifteen oh three, he ran them aground in Jamaica.", "But worms ate through his ships. In 1503, he ran them aground in Jamaica."),
   ("Two of his men crossed the open sea by canoe, to find help.", "Two of his men crossed the open sea by canoe, to find help.")]),
  ("THE ECLIPSE", [
   ("Months passed, and the local Tyeeno stopped bringing food.", "Months passed, and the local Taino stopped bringing food."),
@@ -139,24 +139,53 @@ def almanac(d, x, y, open_prog=1.0):
     for k in range(4): R(d, (x + 112, y + 70 + k * 12, x + 184, y + 71 + k * 12), (150, 130, 100))
 
 # ---------------- maps ----------------
-SEVILLE_P = (-6.3, 36.8); CV = (-24, 16); TRIN = (-61.5, 10.3); STODOM = (-69.9, 18.5)
+SEVILLE_P = (-6, 36); CV = (-24, 15); PARIA = (-63, 10.7); STODOM = (-69.9, 18.45)
 TRINIDAD = [(-61.9, 10.85), (-60.9, 10.85), (-61.0, 10.1), (-61.9, 10.05)]
+# detailed Gulf of Mexico / Central America / northern South America coast (lon, lat)
+AMER_D = [(-97.5, 24), (-97.2, 21), (-96, 19), (-94.5, 18.2), (-92, 18.6), (-91, 18.8), (-90.5, 19.8), (-90.4, 21.1), (-88, 21.5), (-87, 21.5),
+          (-86.8, 20.8), (-87.5, 19.5), (-87.8, 18.4), (-88.3, 17.3), (-88.3, 16.5), (-88.7, 15.8), (-87.8, 15.8), (-86.5, 15.8), (-85, 16),
+          (-84, 15.8), (-83.2, 15.0), (-83.5, 14), (-83.6, 12.5), (-83.8, 11), (-83, 10), (-82.3, 9.3), (-82.2, 9.0), (-81, 8.9), (-79.9, 9.35),
+          (-78.5, 9.4), (-77.4, 8.6), (-76.8, 8.6), (-76, 9.5), (-75.5, 10.5), (-74.8, 11), (-73.5, 11.3), (-72, 12.3), (-71.3, 11.0),
+          (-70.4, 11.6), (-70.2, 12.1), (-69.8, 11.4), (-68.2, 10.5), (-66.5, 10.6), (-64.5, 10.3), (-63.5, 10.6), (-63, 10.7), (-62, 10.7),
+          (-62.2, 10.1), (-61.6, 9.8), (-61, 9.0), (-60, 8.5), (-58, 6.8), (-55, 5.8), (-52, 5), (-50, 0), (-80, 0), (-80, 1), (-78.8, 1.5),
+          (-77.5, 4), (-77.5, 6.5), (-78.2, 8.0), (-79.5, 8.95), (-80.4, 7.3), (-81.2, 7.6), (-82.9, 8.1), (-83.7, 8.6), (-85.7, 9.9),
+          (-85.8, 11.2), (-87.6, 13.0), (-91.4, 13.9), (-92.3, 14.6), (-94, 16), (-96, 15.7), (-100, 17), (-100, 24)]
 
-def westcarib_map(f, w=490, h=360, labels=(), route=None, title=None, dots=()):
+def draw_route(d, seg, prog, head=True):
+    lens = [math.dist(seg[k], seg[k + 1]) for k in range(len(seg) - 1)]; want = sum(lens) * prog; acc = 0; hp = seg[0]
+    for k, L in enumerate(lens):
+        if L == 0: continue
+        n = int(L // 6) + 1
+        for s in range(n):
+            pos = acc + min(L, s * 6)
+            if pos > want: break
+            a, b = seg[k], seg[k + 1]; tt = min(1, s * 6 / L); x, y = a[0] + (b[0] - a[0]) * tt, a[1] + (b[1] - a[1]) * tt
+            R(d, (x - 1, y - 1, x + 1, y + 1), WHITE); hp = (x, y)
+        acc += L
+    if prog >= 1: hp = seg[-1]; R(d, (hp[0] - 1, hp[1] - 1, hp[0] + 1, hp[1] + 1), WHITE)
+    if head and prog < 1:
+        x, y = hp; d.polygon([(x - 6, y + 3), (x + 6, y + 3), (x + 4, y + 7), (x - 4, y + 7)], fill=BROWN); d.polygon([(x, y - 8), (x, y + 2), (x + 6, y + 1)], fill=WHITE)
+
+def region_map(f, box, w=490, h=380, labels=(), route=None, title=None, dots=(), extra=None):
+    lon0, lon1, lat0, lat1 = box
     m = Image.new("RGBA", (w, h)); d = ImageDraw.Draw(m); d.fontmode = "1"
-    P = lambda lon, lat: (6 + (lon + 90) / 30 * (w - 12), 6 + (24 - lat) / 18 * (h - 12))
+    P = lambda lon, lat: (6 + (lon - lon0) / (lon1 - lon0) * (w - 12), 6 + (lat1 - lat) / (lat1 - lat0) * (h - 12))
     R(d, (0, 0, w - 1, h - 1), (58, 98, 150))
-    for poly in (AMER, CUBA2, HISP2, JAM, PR, TRINIDAD): d.polygon([P(*p) for p in poly], fill=(118, 150, 84), outline=(52, 74, 38))
+    for lon in range(-100, -40, 5):
+        x = P(lon, 0)[0]
+        if 0 < x < w: d.line([(x, 0), (x, h)], fill=(52, 88, 136))
+    for lat in range(0, 30, 5):
+        y = P(0, lat)[1]
+        if 0 < y < h: d.line([(0, y), (w, y)], fill=(52, 88, 136))
+    for poly in (AMER_D, FLA, CUBA2, HISP2, JAM, PR, TRINIDAD): d.polygon([P(*p) for p in poly], fill=(118, 150, 84), outline=(52, 74, 38))
+    for lon, lat, r in BAH:
+        x, y = P(lon, lat); rr = r * (w - 12) / (lon1 - lon0); d.ellipse((x - rr, y - rr / 2, x + rr, y + rr / 2), fill=(118, 150, 84))
+    rnd = random.Random(2)
+    for _ in range(26):  # jungle dots on the mainland
+        lon, lat = rnd.uniform(lon0, lon1), rnd.uniform(lat0, lat1); x, y = P(lon, lat)
+        if 0 < x < w and 0 < y < h and m.getpixel((int(x), int(y)))[:3] == (118, 150, 84): R(d, (x, y, x + 3, y + 2), (90, 126, 64))
     if route:
-        pts, prog = route; seg = [P(*p) for p in pts]
-        lens = [math.dist(seg[k], seg[k + 1]) for k in range(len(seg) - 1)]; want = sum(lens) * prog; acc = 0; head = seg[0]
-        for k, L in enumerate(lens):
-            for s in range(int(L // 6)):
-                if acc + s * 6 > want: break
-                a, b = seg[k], seg[k + 1]; tt = s * 6 / L; x, y = a[0] + (b[0] - a[0]) * tt, a[1] + (b[1] - a[1]) * tt
-                R(d, (x - 1, y - 1, x + 1, y + 1), WHITE); head = (x, y)
-            acc += L
-        x, y = head; d.polygon([(x - 6, y + 3), (x + 6, y + 3), (x + 4, y + 7), (x - 4, y + 7)], fill=BROWN); d.polygon([(x, y - 8), (x, y + 2), (x + 6, y + 1)], fill=WHITE)
+        pts, prog = route; draw_route(d, [P(*p) for p in pts], prog)
     for lon, lat in dots:
         x, y = P(lon, lat); on = (f // 10) % 2 == 0
         R(d, (x - 4, y - 4, x + 4, y + 4), RED if on else WHITE); d.rectangle((x - 4, y - 4, x + 4, y + 4), outline=K)
@@ -165,14 +194,163 @@ def westcarib_map(f, w=490, h=360, labels=(), route=None, title=None, dots=()):
         R(d, (x - tw / 2 - 4, y - 10, x + tw / 2 + 3, y + 9), bg); d.text((x - tw / 2, y - 8), text, font=F16, fill=fg)
     if title:
         tw = d.textlength(title, font=F16); R(d, (w / 2 - tw / 2 - 5, 8, w / 2 + tw / 2 + 4, 30), K); d.text((w / 2 - tw / 2, 11), title, font=F16, fill=GOLD)
+    # compass rose
+    cx, cy = w - 30, h - 34; d.polygon([(cx, cy - 16), (cx + 4, cy), (cx, cy + 16), (cx - 4, cy)], fill=WHITE); d.polygon([(cx - 16, cy), (cx, cy - 4), (cx + 16, cy), (cx, cy + 4)], fill=(200, 200, 190))
+    R(d, (cx - 3, cy - 26, cx + 3, cy - 20), K); d.text((cx, cy - 23), "N", font=F8, fill=WHITE, anchor="mm")
     d.rectangle((0, 0, w - 1, h - 1), outline=(240, 220, 170), width=3)
     return outline(m)
 
+def world_route(f, prog, labels):
+    m = world_map(f, labels=labels, title="THIRD VOYAGE, 1498"); d = ImageDraw.Draw(m); w, h = m.size
+    P = lambda lon, lat: (6 + (lon + 100) / 125 * (w - 12), 6 + (64 - lat) / 104 * (h - 12))
+    draw_route(d, [P(*p) for p in (SEVILLE_P, CV, (-45, 9), PARIA)], prog)
+    return m
+
+# ---------------- props ----------------
+def torch(d, x, base, f):
+    R(d, (x, base - 70, x + 4, base), BROWN_D); R(d, (x - 3, base - 76, x + 7, base - 68), (80, 60, 40))
+    fl = (f // 3) % 3
+    d.polygon([(x - 4, base - 76), (x + 2, base - 96 - fl * 3), (x + 8, base - 76)], fill=(240, 120, 30))
+    d.polygon([(x - 1, base - 76), (x + 2, base - 88 - fl * 2), (x + 5, base - 76)], fill=(255, 220, 90))
+
+def barrel(d, x, base):
+    d.ellipse((x, base - 34, x + 26, base), fill=(130, 84, 44)); R(d, (x + 2, base - 26, x + 24, base - 24), (70, 70, 76)); R(d, (x + 2, base - 10, x + 24, base - 8), (70, 70, 76))
+    d.ellipse((x, base - 34, x + 26, base), outline=K)
+
+def crate(d, x, base, s=30):
+    R(d, (x, base - s, x + s, base), (170, 120, 60)); d.rectangle((x, base - s, x + s, base), outline=K, width=2)
+    d.line([(x, base - s), (x + s, base)], fill=(120, 80, 40), width=2)
+
+def gulls(d, f, n=4, y0=200, col=WHITE):
+    for k in range(n):
+        pr = random.Random(k + 40); x = (pr.randint(0, CW) + f * pr.choice((1, 2))) % (CW + 40) - 20; y = y0 + pr.randint(0, 120) + int(math.sin(f * 0.1 + k) * 6)
+        wing = 4 if (f // 5 + k) % 2 else 1
+        d.line([(x - 8, y - wing), (x, y), (x + 8, y - wing)], fill=col, width=2)
+
+def clouds(d, f, y0=150, col=(250, 250, 250), n=4, speed=0.3, seed=1):
+    for k in range(n):
+        pr = random.Random(seed * 10 + k); x = (pr.randint(0, CW) + f * speed) % (CW + 160) - 80; y = y0 + pr.randint(0, 140)
+        for dx, dy, r in ((0, 0, 18), (20, -8, 22), (42, 0, 16)): d.ellipse((x + dx - r, y + dy - r, x + dx + r, y + dy + r), fill=col)
+
+def stars(d, n=60, ymax=500, seed=4):
+    rnd = random.Random(seed)
+    for _ in range(n): x, y = rnd.randint(0, CW), rnd.randint(0, ymax); R(d, (x, y, x, y), WHITE)
+
+def town(d, base, x0=0, x1=CW, dark=False):
+    rnd = random.Random(12); x = x0
+    while x < x1:
+        w = rnd.randint(40, 70); h = rnd.randint(40, 90); col = (60, 56, 66) if dark else (200, 186, 160)
+        R(d, (x, base - h, x + w, base), col)
+        if not dark:
+            d.polygon([(x - 3, base - h), (x + w // 2, base - h - 14), (x + w + 3, base - h)], fill=(176, 90, 60))
+            for wx in range(x + 8, x + w - 8, 16): R(d, (wx, base - h + 14, wx + 6, base - h + 24), (60, 50, 50))
+        else:
+            for wx in range(x + 8, x + w - 8, 16):
+                if rnd.random() < 0.5: R(d, (wx, base - h + 14, wx + 5, base - h + 22), (240, 200, 90))
+        x += w + rnd.randint(2, 10)
+
+def skyline_cadiz(d, base):
+    R(d, (0, base - 30, 300, base), (220, 210, 190))
+    for k, (x, h) in enumerate(((10, 70), (60, 50), (110, 90), (170, 60), (230, 80))):
+        R(d, (x, base - h, x + 36, base), (230, 220, 200)); R(d, (x + 6, base - h + 10, x + 12, base - h + 20), (90, 80, 70))
+    d.ellipse((126, base - 130, 170, base - 86), fill=(214, 180, 90)); R(d, (146, base - 140, 150, base - 128), GOLD_D)
+    for x in range(0, 300, 14): R(d, (x, base - 36, x + 8, base - 30), (200, 190, 170))
+
+def dock(d, x1=330, y=690):
+    R(d, (0, y, x1, CH), (120, 80, 46))
+    for x in range(0, x1, 24): R(d, (x, y, x + 1, CH), (90, 58, 30))
+    R(d, (0, y, x1, y + 4), (150, 104, 60))
+    for x in range(10, x1, 80): R(d, (x, y + 4, x + 8, CH), (80, 50, 26))
+    R(d, (x1 - 8, y - 20, x1, y + 40), (90, 58, 30))
+
+def letter(d, x, y):
+    R(d, (x, y, x + 20, y + 14), WHITE); d.rectangle((x, y, x + 20, y + 14), outline=K); d.line([(x, y), (x + 10, y + 8), (x + 20, y)], fill=K); R(d, (x + 8, y + 7, x + 12, y + 11), RED)
+
+def scroll(d, x, y):
+    R(d, (x, y, x + 60, y + 44), (240, 226, 180)); R(d, (x - 4, y - 4, x + 64, y + 2), (200, 170, 110)); R(d, (x - 4, y + 42, x + 64, y + 48), (200, 170, 110))
+    for k in range(4): R(d, (x + 8, y + 8 + k * 8, x + 52, y + 9 + k * 8), (140, 120, 90))
+    d.ellipse((x + 40, y + 30, x + 54, y + 44), fill=RED_D)
+
+def rowboat(c, d, x, y, f, who="col"):
+    d.polygon([(x, y), (x + 90, y), (x + 80, y + 14), (x + 10, y + 14)], fill=(120, 74, 38)); R(d, (x + 2, y, x + 88, y + 2), (150, 100, 56))
+    put(c, who, x + 44, y + 4, crop=56); put(c, "sailor", x + 4, y + 4, crop=46)
+    a = math.sin(f * 0.25) * 8; d.line([(x + 30, y - 10), (x + 22 + a, y + 22)], fill=BROWN_D, width=2)
+
+def lightning(d, f, x0=300):
+    if f % 40 < 3:
+        pts = [(x0, 0)]; rnd = random.Random(f // 40)
+        for k in range(6): pts.append((pts[-1][0] + rnd.randint(-30, 30), pts[-1][1] + 70))
+        d.line(pts, fill=(255, 250, 200), width=4)
+        return True
+    return False
+
+def big_waves(d, f, y0, col, col2):
+    for x in range(-40, CW + 40, 60):
+        xx = x + (f * 2) % 60; yy = y0 + int(math.sin((x + f * 4) * 0.03) * 10)
+        d.polygon([(xx - 40, yy + 30), (xx, yy), (xx + 30, yy + 30)], fill=col); R(d, (xx - 6, yy, xx + 4, yy + 3), col2)
+
+def chest(d, x, y):
+    R(d, (x, y, x + 26, y + 18), (130, 80, 40)); R(d, (x, y + 6, x + 26, y + 8), GOLD); R(d, (x + 11, y + 6, x + 15, y + 12), GOLD); d.rectangle((x, y, x + 26, y + 18), outline=K)
+
+def shallow(c, y0, y1, x0=0, x1=CW, col=(60, 180, 200)):
+    lay = Image.new("RGBA", (x1 - x0, y1 - y0), col + (150,)); c.alpha_composite(lay, (x0, y0))
+
+def foam(d, f, y, x0=0, x1=CW):
+    for x in range(x0, x1, 22):
+        xx = x + int(math.sin(f * 0.15 + x) * 4); R(d, (xx, y, xx + 12, y + 2), WHITE)
+
+def thatched_wreck(flip=False):
+    s = SP["wreck"].copy(); d = ImageDraw.Draw(s)
+    d.polygon([(40, 92), (80, 70), (120, 92)], fill=(200, 170, 90)); R(d, (46, 92, 114, 100), (150, 110, 60))
+    s = outline(s)
+    return s.transpose(Image.FLIP_LEFT_RIGHT) if flip else s
+SP["hutwreck"] = thatched_wreck(); SP["hutwreck2"] = thatched_wreck(True)
+
+def candle(d, x, base, f):
+    R(d, (x, base - 24, x + 8, base), (240, 230, 200)); fl = (f // 4) % 2
+    d.polygon([(x + 1, base - 24), (x + 4, base - 36 - fl * 3), (x + 7, base - 24)], fill=(255, 200, 60)); R(d, (x - 4, base - 2, x + 12, base), GOLD_D)
+
+def window(d, x, y, w, h, night=True, f=0, moon_shade=0.0):
+    R(d, (x - 6, y - 6, x + w + 6, y + h + 6), (90, 58, 30))
+    if night:
+        R(d, (x, y, x + w, y + h), (16, 20, 50)); rnd = random.Random(3)
+        for k in range(10): px, py = x + (k * 37) % (w - 6) + 3, y + (k * 23) % (h - 6) + 3; R(d, (px, py, px, py), WHITE)
+    else:
+        R(d, (x, y, x + w, y + h), (150, 200, 240)); town(d, y + h, x, x + w)
+    R(d, (x + w // 2 - 2, y, x + w // 2 + 2, y + h), (90, 58, 30)); R(d, (x, y + h // 2 - 2, x + w, y + h // 2 + 2), (90, 58, 30))
+
+def castile_banner(d, x, y):
+    R(d, (x, y, x + 50, y + 80), (190, 30, 40)); R(d, (x + 14, y + 26, x + 36, y + 52), GOLD); R(d, (x + 12, y + 20, x + 38, y + 26), GOLD)
+    for k in range(3): R(d, (x + 12 + k * 10, y + 14, x + 18 + k * 10, y + 20), GOLD)
+    R(d, (x + 22, y + 40, x + 28, y + 52), (120, 70, 20)); R(d, (x - 4, y - 4, x + 54, y), GOLD_D)
+
+def aragon_banner(d, x, y):
+    R(d, (x, y, x + 50, y + 80), GOLD)
+    for k in range(4): R(d, (x + 4 + k * 12, y, x + 9 + k * 12, y + 80), (190, 30, 40))
+    R(d, (x - 4, y - 4, x + 54, y), GOLD_D)
+
+def bonfire(d, x, base, f):
+    for k in range(3): R(d, (x - 20 + k * 12, base - 6, x - 6 + k * 12, base), BROWN_D)
+    fl = (f // 3) % 3
+    d.polygon([(x - 18, base - 6), (x - 2, base - 50 - fl * 4), (x + 18, base - 6)], fill=(230, 90, 30))
+    d.polygon([(x - 9, base - 6), (x, base - 34 - fl * 3), (x + 9, base - 6)], fill=(255, 210, 80))
+
+def bed(c, d, x, base):
+    R(d, (x, base - 50, x + 220, base - 26), (120, 74, 38)); R(d, (x, base - 26, x + 8, base), (90, 58, 30)); R(d, (x + 212, base - 26, x + 220, base), (90, 58, 30))
+    R(d, (x, base - 100, x + 12, base - 26), (90, 58, 30)); R(d, (x + 4, base - 64, x + 216, base - 50), (236, 230, 214))
+    R(d, (x + 14, base - 72, x + 50, base - 58), WHITE)
+    lying = SP["col"].rotate(90, resample=Image.NEAREST, expand=True); c.alpha_composite(lying, (x + 12, base - 100))
+    R(d, (x + 60, base - 74, x + 216, base - 52), (150, 40, 50)); d.rectangle((x + 60, base - 74, x + 216, base - 52), outline=K)
+
+def hunger_crew(c, x0, base, n=3):
+    for k in range(n): put(c, "sailor", x0 + k * 46, base)
+
 # ---------------- backgrounds ----------------
-def night_sea(d):
-    sea(d, (10, 14, 40), (60, 70, 120), 600, (20, 30, 70), (80, 100, 160))
-    rnd = random.Random(4)
-    for _ in range(60): x, y = rnd.randint(0, CW), rnd.randint(0, 500); R(d, (x, y, x, y), WHITE)
+def night_sea(d, horizon=600):
+    sea(d, (10, 14, 40), (60, 70, 120), horizon, (20, 30, 70), (80, 100, 160)); stars(d)
+
+def day_sea(d, horizon=600):
+    sea(d, (80, 160, 230), (200, 225, 250), horizon, (40, 110, 170), (200, 230, 250))
 
 def court(d):
     grad(d, (60, 20, 24), (110, 40, 40), 0, GY, 12)
@@ -180,146 +358,254 @@ def court(d):
     R(d, (0, GY, CW, CH), (120, 30, 36)); R(d, (150, GY, 390, CH), (170, 40, 46))
     for x in range(0, CW, 40): R(d, (x, GY, x + 1, CH), (90, 20, 26))
 
-def beach(d, night=False):
-    if night: sea(d, (10, 14, 40), (50, 60, 100), 560, (20, 40, 70), (80, 100, 150))
-    else: sea(d, (80, 170, 240), (200, 230, 250), 560, (40, 170, 190), (200, 240, 240))
-    R(d, (0, 640, CW, CH), (130, 116, 80) if night else (236, 214, 150))
+def jamaica_bay(d, sky=None):
+    if sky == "sunset": sea(d, (250, 150, 90), (250, 210, 150), 560, (40, 110, 170), (240, 200, 160))
+    elif sky == "night": sea(d, (10, 14, 40), (50, 60, 100), 560, (20, 40, 70), (80, 100, 150)); stars(d, 40, 480)
+    else: sea(d, (80, 170, 240), (200, 230, 250), 560, (40, 150, 190), (200, 240, 240))
+    night = sky == "night"
+    d.polygon([(380, 560), (440, 520), (500, 530), (CW, 545), (CW, 560)], fill=(30, 50, 40) if night else (80, 130, 80))
+    sand = (120, 108, 76) if night else (236, 214, 150)
+    d.polygon([(250, 690), (CW, 640), (CW, CH), (0, CH), (0, 760)], fill=sand)
     rnd = random.Random(8)
-    for _ in range(90): x, y = rnd.randint(0, CW), rnd.randint(644, CH); R(d, (x, y, x + 1, y), (110, 96, 64) if night else (210, 186, 124))
-    palm(d, 490, 650, 200, -1)
+    for _ in range(70):
+        x, y = rnd.randint(0, CW), rnd.randint(700, CH)
+        if y > 690 - (x - 250) * 50 / 290: R(d, (x, y, x + 1, y), (100, 90, 60) if night else (210, 186, 124))
+    palm(d, 480, 660, 210, -1); palm(d, 400, 668, 150, 1)
 
-def dock(d, x1=250):
-    R(d, (0, 690, x1, CH), (120, 80, 46))
-    for x in range(0, x1, 24): R(d, (x, 690, x + 1, CH), (90, 58, 30))
-    R(d, (0, 690, x1, 694), (150, 104, 60))
+def cabin(d):
+    grad(d, (70, 44, 24), (110, 72, 40), 0, CH, 10)
+    for y in range(0, CH, 32): R(d, (0, y, CW, y + 1), (60, 36, 18))
+    R(d, (0, GY, CW, CH), (90, 58, 30))
+    for x in range(0, CW, 40): R(d, (x, GY, x + 1, CH), (60, 36, 18))
+
+def village(d):
+    sea(d, (80, 170, 240), (200, 230, 250), 560, (40, 150, 190), (200, 240, 240))
+    R(d, (0, 620, CW, CH), (150, 170, 90))
+    rnd = random.Random(6)
+    for _ in range(80): x, y = rnd.randint(0, CW), rnd.randint(624, CH); R(d, (x, y, x + 2, y), (120, 146, 70))
+    palm(d, 500, 630, 200, -1)
+
+def room(d):
+    grad(d, (120, 112, 100), (160, 150, 136), 0, GY, 10)
+    for y in range(0, GY, 28):
+        for x in range((y // 28 % 2) * 30, CW, 60): R(d, (x, y, x, y + 27), (110, 102, 92))
+        R(d, (0, y, CW, y), (110, 102, 92))
+    R(d, (0, GY, CW, CH), (110, 80, 50))
+    for x in range(0, CW, 36): R(d, (x, GY, x + 1, CH), (80, 56, 34))
 
 def make_bg(i, li):
     c = Image.new("RGBA", (CW, CH)); d = ImageDraw.Draw(c)
     if i == 0 or (i == 3 and li == 0):
-        night_sea(d); d.ellipse((420, 120, 466, 166), fill=(236, 236, 214)); dock(d)
-    elif i in (1, 7) and not (i == 7 and li == 1) or (i == 5 and li == 0) or (i == 2 and li == 1):
-        if i == 7: sea(d, (250, 150, 90), (250, 210, 150), 600, (40, 90, 150), (240, 200, 160)); R(d, (0, 640, CW, CH), (236, 214, 150))
-        else: grad(d, (24, 44, 70), (60, 90, 120), 0, CH, 12)
-        if i == 2: sea(d, (90, 170, 240), (210, 230, 250), 600, (40, 120, 180), (200, 230, 250)); dock(d)
-        if i == 1 and li == 1: R(d, (0, GY, CW, CH), (196, 176, 120))
-    elif i == 2 and li == 0:
-        sea(d, (90, 170, 240), (210, 230, 250), 560, (40, 120, 180), (200, 230, 250))
-        R(d, (0, 640, CW, CH), (196, 176, 120)); stone_house(d, 380, 650); church(d, 30, 650)
-    elif i == 3 or (i == 7 and li == 1):
+        night_sea(d); d.ellipse((420, 120, 466, 166), fill=(236, 236, 214)); town(d, 600, 0, 260, dark=True); dock(d)
+    elif i == 1:
+        grad(d, (24, 44, 70), (60, 90, 120), 0, 560, 12)
+        if li == 0: day_sea(d, 560)
+        else:
+            R(d, (0, 560, CW, CH), (196, 176, 120)); town(d, 610, 0, CW)
+            rnd = random.Random(8)
+            for _ in range(60): x, y = rnd.randint(0, CW), rnd.randint(612, CH); R(d, (x, y, x + 1, y), (170, 150, 100))
+    elif i == 2:
+        day_sea(d, 600); town(d, 600, 0, 300); R(d, (0, 600, 300, 690), (196, 176, 120)); dock(d)
+    elif i == 3:
         court(d)
     elif i == 4:
-        if li < 2: sea(d, (80, 160, 230), (200, 225, 250), 600, (40, 110, 170), (200, 230, 250))
-        else: sea(d, (30, 34, 44), (70, 76, 90), 600, (30, 50, 60), (120, 130, 140))
-        if li == 1: R(d, (0, 640, CW, CH), (196, 176, 120))
+        if li == 0: day_sea(d, 600); skyline_cadiz(d, 600)
+        elif li == 1:
+            day_sea(d, 600); town(d, 600, 0, 200); dock(d, 200)
+        else: sea(d, (20, 22, 30), (60, 64, 76), 600, (24, 40, 50), (110, 120, 130))
     elif i == 5:
-        beach(d) if li == 1 else sea(d, (80, 170, 240), (200, 230, 250), 600, (40, 110, 170), (200, 240, 240))
+        if li == 0: grad(d, (24, 44, 70), (60, 90, 120), 0, 560, 12); day_sea(d, 560)
+        elif li == 1: jamaica_bay(d)
+        else: day_sea(d, 600)
     elif i == 6:
-        beach(d, night=(li > 0))
+        if li == 0: village(d)
+        elif li == 1: cabin(d)
+        else: jamaica_bay(d, "night")
+    elif i == 7:
+        if li == 0: jamaica_bay(d, "sunset")
+        else: room(d)
     return c
 
 # ---------------- scenes ----------------
+def guards(c, xs, f, flip=False):
+    for k, x in enumerate(xs): put(c, f"esp{st(f, k, 12)}", x, FEET, sc=2, flip=flip)
+
 def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
     d.fontmode = "1"; prog = min(1.0, lt / max(0.1, ldur))
     if i == 0:
         waves(d, f, 600, (80, 100, 160))
-        x = 300 + t * 4; put(c, "ship", x, 690 + bob(f, 3, 0.1), k=0.85)
-        put(c, "colc", 30, FEET, sc=2); label(d, "COLUMBUS", 82, 540, GOLD)
-        if li == 0: label(d, "SPAIN, 1500", 300, 260, K, YEL, F16)
+        put(c, "ship", 350, 700 + bob(f, 3, 0.1), k=0.85)
+        for k in range(2): put(c, "sailor", 372 + k * 70, 650 + bob(f, 3, 0.1), crop=50)
+        torch(d, 6, 690, f); torch(d, 316, 690, f); barrel(d, 290, 700); crate(d, 30, 700)
+        if li == 0:
+            put(c, "esp0", -20, FEET, sc=2); put(c, "colc", 96, FEET, sc=2); put(c, "esp1", 206, FEET, sc=2, flip=True)
+            label(d, "COLUMBUS", 148, 500, GOLD); label(d, "GUARD", 40, 545, WHITE, K); label(d, "GUARD", 262, 545, WHITE, K)
+            label(d, "HISPANIOLA, 1500", 270, 250, K, YEL, F16); label(d, "SHIP", 430, 520, GOLD)
         else:
-            put(c, "bob", 140, FEET, sc=2); label(d, "ROYAL JUDGE", 192, 500, GOLD)
-            label(d, "ARRESTED", 300, 260, WHITE, RED, F16); label(d, "BY ROYAL ORDER", 300, 300, K, YEL, F16)
+            put(c, "bob", -10, FEET, sc=2); put(c, "colc", 96, FEET, sc=2); put(c, "esp1", 206, FEET, sc=2, flip=True)
+            label(d, "BOBADILLA", 42, 545, GOLD); label(d, "COLUMBUS", 148, 500, GOLD)
+            scroll(d, 60, 380 + bob(f, 3, 0.08)); label(d, "ROYAL ORDER", 90, 350, WHITE, RED_D)
+            label(d, "ARRESTED", 380, 250, WHITE, RED, F16); label(d, "BY ROYAL ORDER", 380, 290, K, YEL, F16)
     elif i == 1:
         if li == 0:
-            c.alpha_composite(world_map(f, route=([SEVILLE_P, CV, TRIN], min(1, prog * 1.4)), labels=[("SPAIN", -4, 41, K, YEL), ("SOUTH AMERICA", -60, -12, K, YEL)], title="THIRD VOYAGE, 1498"), (25, 120))
-            if prog > 0.7: label(d, "SOUTH AMERICA REACHED", 270, 570, WHITE, RED_D, F16)
+            c.alpha_composite(world_route(f, min(1, prog * 1.3), [("SPAIN", -4, 42, K, YEL), ("AFRICA", 15, 5, K, YEL), ("SOUTH AMERICA", -60, -12, K, YEL)]), (25, 110))
+            waves(d, f, 560, (200, 230, 250)); gulls(d, f, 3, 560, WHITE)
+            put(c, "ship", 40 + prog * 220, 720 + bob(f, 3, 0.1)); label(d, "COLUMBUS'S SHIP", 120 + prog * 220, 570, GOLD)
+            if prog > 0.75: label(d, "SOUTH AMERICAN MAINLAND!", 270, 535, WHITE, RED_D, F16)
         else:
-            c.alpha_composite(westcarib_map(f, labels=[("HISPANIOLA", -71, 21.2, K, YEL), ("SANTO DOMINGO", -71, 16.6, WHITE, K)], dots=[STODOM], title="1498-1500"), (25, 110))
-            put(c, "col", 218, FEET, sc=2); label(d, "GOVERNOR COLUMBUS", 270, 545, GOLD)
+            c.alpha_composite(region_map(f, (-80, -58, 8, 22), h=380, route=([PARIA, (-64, 11.6), (-68, 15), STODOM], min(1, prog * 1.4)),
+                labels=[("HISPANIOLA", -71, 20.4, K, YEL), ("SANTO DOMINGO", -66, 17.6, WHITE, K), ("PARIA", -63.5, 9.5, K, YEL), ("JAMAICA", -77.2, 16.9, WHITE, K)],
+                dots=[STODOM], title="BACK TO HISPANIOLA"), (25, 110))
+            put(c, "col", 200, FEET, sc=2); label(d, "GOVERNOR COLUMBUS", 252, 545, GOLD)
+            put(c, "esp0", 330, FEET); put(c, "esp1", 380, FEET); label(d, "SOLDIERS", 380, 620, WHITE, K)
+            put(c, "set1", 20, FEET); put(c, "set2", 80, FEET, flip=True); label(d, "SETTLERS", 76, 620, WHITE, K)
+            R(d, (470, 520, 473, FEET), BROWN_D); castile_banner(d, 474, 524)
     elif i == 2:
+        waves(d, f, 600, (200, 230, 250)); gulls(d, f, 3, 180)
         if li == 0:
-            put(c, "set1", 40, FEET, sc=2); put(c, "set2", 380, FEET, sc=2, flip=True)
-            label(d, "SETTLER", 92, 545, GOLD); label(d, "SETTLER", 432, 545, GOLD)
-            bubble(d, "UNFAIR!", 110, 470); bubble(d, "HARSH!", 420, 470) if prog > 0.3 else None
+            put(c, "ship", 360, 700 + bob(f, 3, 0.1)); label(d, "TO SPAIN", 440, 520, GOLD)
+            pos = [(-10, "set1", False), (70, "set2", True), (150, "set1", True)]
+            for x, key, fl in pos: put(c, key, x, FEET, sc=2, flip=fl)
+            label(d, "SETTLERS", 120, 545, GOLD)
+            bubble(d, "UNFAIR!", 60, 470); bubble(d, "TOO HARSH!", 210, 430) if prog > 0.25 else None
+            for k in range(3):
+                ph = (prog * 1.5 + k * 0.33) % 1; x = 160 + ph * 260; y = 520 - math.sin(ph * math.pi) * 160
+                letter(d, x, y)
             label(d, "COMPLAINTS TO SPAIN", 270, 250, K, YEL, F16)
         else:
-            waves(d, f, 600, (80, 100, 160))
-            put(c, "ship", 260, 640 + bob(f, 3, 0.1))
-            put(c, "bob", 40, FEET, sc=2); label(d, "BOBADILLA", 92, 545, GOLD)
+            x = 520 - min(1, prog * 2) * 170; put(c, "ship", x, 700 + bob(f, 3, 0.1)); put(c, "sailor", x + 30, 650, crop=50)
+            put(c, "bob", 120, FEET, sc=2); label(d, "BOBADILLA", 172, 545, GOLD)
+            guards(c, [10], f)
+            put(c, "esp1", 230, FEET, sc=2, flip=True); label(d, "SOLDIERS", 60, 500, WHITE, K)
+            scroll(d, 240, 400) if prog > 0.5 else None
             label(d, "ROYAL JUDGE", 330, 250, K, YEL, F16); label(d, "AUGUST 1500", 330, 290, WHITE, K, F16)
     elif i == 3:
         if li == 0:
             waves(d, f, 600, (80, 100, 160))
-            put(c, "ship", 290, 690 + bob(f, 3, 0.1)); put(c, "colc", 140, FEET, sc=2)
-            put(c, "bob", 30, FEET, sc=2); label(d, "BOBADILLA", 82, 545, GOLD); label(d, "COLUMBUS", 192, 500, GOLD)
-            label(d, "OCTOBER 1500", 330, 250, K, YEL, F16); label(d, "IN CHAINS", 330, 290, WHITE, RED, F16)
+            sy = bob(f, 3, 0.1); put(c, "ship", 350, 700 + sy, k=0.85)
+            d.polygon([(310, 690), (360, 652 + sy), (366, 658 + sy), (316, 696)], fill=(150, 104, 60))
+            torch(d, 6, 690, f); torch(d, 316, 690, f)
+            put(c, "bob", -10, FEET, sc=2); label(d, "BOBADILLA", 42, 545, GOLD)
+            x = 90 + prog * 150; put(c, "colc", x, FEET, sc=2); label(d, "COLUMBUS", x + 52, 500, GOLD)
+            label(d, "OCTOBER 1500", 330, 250, K, YEL, F16); label(d, "BACK TO SPAIN", 330, 290, WHITE, RED, F16)
         else:
-            put(c, "ferd", 30, FEET, sc=2); put(c, "isa", 140, FEET, sc=2)
-            label(d, "FERDINAND", 82, 545, GOLD); label(d, "ISABELLA", 192, 500, GOLD)
-            put(c, "col" if prog > 0.3 else "colc", 380, FEET, sc=2, flip=True); label(d, "COLUMBUS", 432, 545, GOLD)
-            if prog > 0.3: label(d, "FREE", 432, 300, K, YEL, F16)
-            if prog > 0.6: label(d, "NOT GOVERNOR", 330, 340, WHITE, RED, F16)
+            castile_banner(d, 60, 150); aragon_banner(d, 430, 150)
+            R(d, (20, 640, 280, 700), (170, 140, 100)); R(d, (20, 636, 280, 642), GOLD_D)
+            for x in (40, 150):
+                R(d, (x, 520, x + 90, 640), (150, 30, 40)); R(d, (x - 4, 510, x + 94, 524), GOLD)
+            put(c, "ferd", 50, 680, sc=2); put(c, "isa", 160, 680, sc=2)
+            label(d, "FERDINAND", 102, 460, GOLD); label(d, "ISABELLA", 212, 420, GOLD)
+            freed = prog > 0.35
+            put(c, "col" if freed else "colc", 380, FEET, sc=2, flip=True); label(d, "COLUMBUS", 432, 545, GOLD)
+            if freed:
+                for k in range(6): R(d, (390 + k * 14, FEET - 4, 398 + k * 14, FEET), CHAIN)
+                label(d, "FREE", 432, 300, K, YEL, F16)
+            if prog > 0.6: label(d, "NO LONGER GOVERNOR", 300, 340, WHITE, RED, F16)
     elif i == 4:
         if li == 0:
+            clouds(d, f, 140); gulls(d, f, 4, 300, (40, 40, 40))
             waves(d, f, 600, (200, 230, 250))
             for k in range(4):
-                put(c, "ship" if k == 0 else tint(SP["ship"], 0.8), 20 + k * 120 + t * 4, 680 + (k % 2) * 20 + bob(f, 3, 0.1, k))
-            label(d, "1502: FOUR SHIPS", 270, 260, K, YEL, F16)
+                put(c, "ship" if k == 0 else tint(SP["ship"], 0.85), 120 + k * 105 - t * 3, 680 + (k % 2) * 30 + bob(f, 3, 0.1, k))
+            label(d, "CÁDIZ", 150, 420, GOLD)
+            label(d, "MAY 1502: FOUR SHIPS", 270, 250, K, YEL, F16)
         elif li == 1:
-            put(c, "col", 40, FEET, sc=2); label(d, "COLUMBUS", 92, 545, GOLD)
-            put(c, "ovando", 380, FEET, sc=2, flip=True); label(d, "GOVERNOR OVANDO", 400, 545, GOLD)
-            bubble(d, "HURRICANE!", 130, 460)
-            if prog > 0.5: bubble(d, "NONSENSE.", 410, 400)
+            dark = min(1, prog * 1.5)
+            for k in range(5):
+                pr = random.Random(k); cx = 540 - dark * 200 + k * 60; cy = 120 + pr.randint(0, 80)
+                for dx, dy, r in ((0, 0, 30), (34, -10, 36), (70, 0, 28)): d.ellipse((cx + dx - r, cy + dy - r, cx + dx + r, cy + dy + r), fill=(70, 74, 86))
+            for k in range(8): put(c, tint(SP["ship"], 0.6).resize((80, 65), Image.NEAREST), 210 + k * 40, 612 + (k % 2) * 6)
+            label(d, "TREASURE FLEET", 380, 530, WHITE, K)
+            waves(d, f, 600, (200, 230, 250))
+            put(c, "ovando", 20, FEET, sc=2); label(d, "GOVERNOR OVANDO", 120, 545, GOLD); put(c, "esp0", 130, FEET)
+            rowboat(c, d, 300, 730 + bob(f, 3, 0.1), f); label(d, "COLUMBUS", 360, 640, GOLD)
+            bubble(d, "HURRICANE COMING!", 370, 460)
+            if prog > 0.5: bubble(d, "NONSENSE.", 90, 400)
             label(d, "SANTO DOMINGO", 270, 250, K, YEL, F16)
         else:
+            flash = lightning(d, f, 120 + (f // 40) * 97 % 300)
             rain(d, f)
             for k in range(5):
-                sink = min(1, max(0, prog * 1.6 - k * 0.15)); x = 20 + k * 100
-                im = SP["ship"].rotate(-8 + 16 * (k % 2) + int(math.sin(f * 0.2 + k) * 4), resample=Image.NEAREST, expand=True)
+                sink = 0.65 * min(1, max(0, prog * 1.6 - k * 0.15)); x = -10 + k * 110
+                im = SP["ship"].rotate(-14 + 28 * (k % 2) + int(math.sin(f * 0.2 + k) * 6), resample=Image.NEAREST, expand=True)
                 im = im.crop((0, 0, im.width, max(1, int(im.height * (1 - sink * 0.85)))))
-                put(c, tint(im, 0.6), x, 690 + int(sink * 40) + bob(f, 6, 0.2, k))
-            waves(d, f, 600, (140, 150, 170))
-            label(d, "~20 SHIPS LOST", 270, 250, WHITE, RED, F16); label(d, "BOBADILLA DROWNS", 270, 290, WHITE, K, F16)
+                put(c, tint(im, 0.6), x, 680 + int(sink * 50) + bob(f, 6, 0.2, k))
+            big_waves(d, f, 640, (30, 50, 64), (180, 190, 200))
+            for k in range(3): chest(d, 80 + k * 150 + int(math.sin(f * 0.1 + k) * 10), 700 + bob(f, 5, 0.15, k))
+            label(d, "BOBADILLA'S SHIP", 120, 470, GOLD)
+            label(d, "~20 SHIPS LOST", 270, 250, WHITE, RED, F16); label(d, "~500 DEAD", 270, 290, WHITE, K, F16)
+            if flash: R(d, (0, 0, CW, 6), WHITE)
     elif i == 5:
         if li == 0:
-            c.alpha_composite(westcarib_map(f, route=([(-78, 18.6), (-85.5, 16.4), (-83.2, 15.0), (-83.3, 10.8), (-81, 8.8), (-79.6, 9.6)], min(1, prog * 1.3)),
-                labels=[("HONDURAS", -86.5, 14.2, K, YEL), ("PANAMA", -80.5, 7.6, K, YEL), ("JAMAICA", -77.2, 19.4, WHITE, K)], title="FOURTH VOYAGE, 1502-03"), (25, 110))
+            route = [STODOM, (-73, 17.4), (-77, 17.3), (-85.9, 16.5), (-84, 16.2), (-82.9, 15.1), (-83.2, 12.5), (-83.3, 11), (-82.6, 10.1),
+                     (-82.0, 9.3), (-80, 9.6), (-79.0, 9.6), (-77.5, 13), (-75.9, 17.9), (-76.4, 18.55), (-77.2, 18.42)]
+            c.alpha_composite(region_map(f, (-90, -66, 7, 22), h=400, route=(route, min(1, prog * 1.15)),
+                labels=[("HONDURAS", -87.5, 14.4, K, YEL), ("COSTA RICA", -86.5, 9.3, K, YEL), ("PANAMA", -79.5, 7.9, K, YEL), ("JAMAICA", -81.5, 18.2, WHITE, K), ("HISPANIOLA", -71, 17.3, K, YEL)],
+                title="FOURTH VOYAGE, 1502-03"), (25, 110))
+            waves(d, f, 560, (200, 230, 250))
+            for k in range(6): palm(d, 20 + k * 90, 600, 40 + (k % 3) * 10, 1 if k % 2 else -1)
+            R(d, (0, 590, CW, 604), (90, 130, 70))
+            put(c, "ship", 200 + math.sin(t * 0.3) * 20, 720 + bob(f, 3, 0.1)); label(d, "CENTRAL AMERICAN COAST", 270, 640, WHITE, K)
         elif li == 1:
-            put(c, "wreck", 60, 720); put(c, "wreck", 250, 730, flip=True)
-            label(d, "JAMAICA, 1503", 270, 250, K, YEL, F16); label(d, "SHIPWORM DAMAGE", 270, 290, WHITE, K, F16)
-            put(c, "col", 430, FEET); label(d, "COLUMBUS", 456, 600, GOLD)
+            for x, key in ((-10, "hutwreck"), (150, "hutwreck2")): put(c, key, x, 726 - (x > 0) * 6)
+            shallow(c, 700, 760, 0, 330); foam(d, f, 700, 0, 300); foam(d, f + 30, 744, 0, 260)
+            for k in range(3): put(c, "sailor", 300 + k * 40, FEET - 20 + k * 6)
+            put(c, "col", 440, FEET - 4); label(d, "COLUMBUS", 466, 600, GOLD); label(d, "CREW", 340, 580, WHITE, K)
+            label(d, "JAMAICA, 1503", 270, 250, K, YEL, F16); label(d, "RUN AGROUND", 270, 290, WHITE, RED, F16)
+            label(d, "SHIPWORMS!", 140, 440, WHITE, K)
+            for k in range(5): R(d, (40 + k * 50 + (f // 6 + k) % 6, 640 + (k % 2) * 16, 46 + k * 50 + (f // 6 + k) % 6, 642 + (k % 2) * 16), (230, 220, 200))
         else:
-            waves(d, f, 600, (200, 240, 240))
-            x = -60 + prog * 400
-            d.polygon([(x, 700), (x + 120, 700), (x + 108, 714), (x + 12, 714)], fill=(120, 74, 38)); R(d, (x + 4, 700, x + 116, 702), (150, 100, 56))
+            waves(d, f, 600, (200, 240, 240)); gulls(d, f, 2, 520)
+            c.alpha_composite(region_map(f, (-79, -68, 16.5, 20.5), w=490, h=250, route=([(-76.2, 18.0), (-75.3, 18.1), (-74.45, 18.4)], min(1, prog * 1.2)),
+                labels=[("JAMAICA", -77.3, 17.2, K, YEL), ("HISPANIOLA", -71.5, 19.9, K, YEL)], title="ABOUT 450 MILES BY CANOE"), (25, 110))
+            x = 30 + prog * 230; y = 690 + bob(f, 4, 0.12)
             for j in range(2):
-                put(c, "sailor", x + 20 + j * 50, 704, crop=46); a = math.sin(f * 0.25 + j) * 8
-                d.line([(x + 50 + j * 50, 688), (x + 44 + j * 50 + a, 722)], fill=BROWN_D, width=2)
-            label(d, "TO HISPANIOLA", 270, 250, K, YEL, F16); label(d, "BY CANOE", 270, 290, WHITE, K, F16)
+                put(c, "sailor", x + 20 + j * 90, y + 8, sc=2, crop=46); a = math.sin(f * 0.25 + j) * 14
+                d.line([(x + 90 + j * 90, y - 40), (x + 80 + j * 90 + a, y + 36)], fill=BROWN_D, width=4)
+            d.polygon([(x, y), (x + 220, y), (x + 196, y + 28), (x + 24, y + 28)], fill=(120, 74, 38)); R(d, (x + 4, y, x + 216, y + 4), (150, 100, 56))
+            label(d, "MÉNDEZ", x + 72, y - 120, GOLD); label(d, "FIESCHI", x + 162, y - 150, GOLD)
     elif i == 6:
         if li == 0:
-            put(c, "col", 40, FEET, sc=2); label(d, "COLUMBUS", 92, 545, GOLD)
-            put(c, "tai0", 380, FEET, sc=2, flip=True); label(d, "TAINO", 432, 545, GOLD)
-            put(c, "bask0", 300, FEET); label(d, "NO MORE FOOD", 270, 250, WHITE, RED, F16)
+            for k in range(3): hut(d, 250 + k * 90, 640, 60)
+            put(c, "col", 10, FEET, sc=2); label(d, "COLUMBUS", 62, 545, GOLD)
+            hunger_crew(c, 110, FEET, 2); label(d, "HUNGRY CREW", 156, 600, WHITE, K)
+            for k in range(3):
+                x = 250 + k * 80 + prog * 60; put(c, f"tai{st(f, k, 7)}", x, FEET, flip=False)
+                put(c, "bask0", x + 10, FEET - 50, crop=26)
+            label(d, "TAINO", 360, 610, GOLD); label(d, "NO MORE FOOD", 270, 250, WHITE, RED, F16)
         elif li == 1:
-            almanac(d, 170, 420); label(d, "ALMANAC", 270, 380, GOLD)
-            label(d, "ECLIPSE: FEB 29, 1504", 270, 250, K, YEL, F16)
-            draw_moon(c, 460, 150, 26, 0)
+            window(d, 330, 160, 150, 120); draw_moon(c, 405, 210, 22, 0)
+            R(d, (120, 560, 420, 580), (130, 84, 44)); R(d, (140, 580, 156, FEET), (100, 64, 30)); R(d, (384, 580, 400, FEET), (100, 64, 30))
+            almanac(d, 170, 430); candle(d, 390, 560, f)
+            label(d, "ALMANAC", 270, 400, GOLD)
+            put(c, "col", 10, FEET, sc=2); label(d, "COLUMBUS", 62, 545, GOLD)
+            label(d, "ECLIPSE: FEB 29, 1504", 270, 330, K, YEL, F16)
         else:
-            shade = min(1, prog * 1.6); draw_moon(c, 270, 300, 60, shade)
-            put(c, "col", 40, FEET, sc=2); label(d, "COLUMBUS", 92, 545, GOLD)
-            put(c, "tai0", 390, FEET, sc=2, flip=True); label(d, "TAINO", 442, 545, GOLD)
-            if prog > 0.7: put(c, "bask", 300, FEET); put(c, "bask", 330, FEET - 4); label(d, "FOOD IS BACK", 270, 420, K, YEL, F16)
+            shade = min(1, prog * 1.6); draw_moon(c, 270, 220, 56, shade)
+            bonfire(d, 270, FEET, f)
+            put(c, "col", -10, FEET, sc=2); label(d, "COLUMBUS", 42, 545, GOLD)
+            for k in range(3): put(c, f"tai{k % 2}", 330 + k * 60, FEET - (k % 2) * 8, flip=True)
+            label(d, "TAINO", 420, 620, GOLD)
+            if prog > 0.7:
+                for k in range(3): put(c, "bask", 120 + k * 36, FEET - (k % 2) * 6)
+                label(d, "FOOD IS BACK", 270, 420, K, YEL, F16)
+            else: label(d, "THE MOON DARKENS", 270, 420, WHITE, RED_D, F16)
     elif i == 7:
         if li == 0:
-            waves(d, f, 600, (240, 200, 160))
-            put(c, "ship", 340 - prog * 60, 690 + bob(f, 3, 0.1)); put(c, "wreck", 10, 740, k=0.8)
-            put(c, "col", 220, FEET - 20); label(d, "COLUMBUS", 246, 580, GOLD)
+            put(c, "hutwreck", -10, 724, k=0.8); shallow(c, 700, 760, 0, 330); foam(d, f, 700, 0, 300)
+            x = 520 - min(1, prog * 1.6) * 200; put(c, "ship", x, 615 + bob(f, 3, 0.1)); label(d, "RESCUE SHIP", x + 80, 460, GOLD)
+            gulls(d, f, 3, 300, (60, 40, 40))
+            for k in range(3):
+                put(c, "sailor", 280 + k * 46, FEET + (k % 2) * 6 - (6 if (f // 8 + k) % 2 else 0))
+            put(c, "col", 440, FEET); label(d, "COLUMBUS", 466, 600, GOLD); label(d, "SURVIVORS", 340, 570, WHITE, K)
             label(d, "RESCUED: JUNE 1504", 270, 250, K, YEL, F16)
         else:
-            put(c, "colc", 220, FEET, sc=2, alpha=0.35)
-            put(c, "col", 220, FEET, sc=2, alpha=max(0.2, 1 - prog)); label(d, "COLUMBUS", 272, 545, GOLD)
-            label(d, "VALLADOLID, 1506", 270, 250, K, YEL, F16)
-            if prog > 0.5: label(d, "FOLLOW FOR MORE HISTORY", 270, 340, WHITE, RED, F16)
+            window(d, 360, 200, 130, 140, night=False)
+            R(d, (80, 160, 84, 230), BROWN_D); R(d, (66, 176, 98, 180), BROWN_D)
+            bed(c, d, 60, FEET); candle(d, 300, FEET - 60, f); R(d, (290, FEET - 60, 330, FEET), (110, 70, 34))
+            label(d, "COLUMBUS", 170, 600, GOLD)
+            label(d, "VALLADOLID, 1506", 190, 260, K, YEL, F16)
+            if prog > 0.45: label(d, "FOLLOW FOR MORE HISTORY", 270, 420, WHITE, RED, F16)
 
 # ---------------- render ----------------
 if CHECK:
