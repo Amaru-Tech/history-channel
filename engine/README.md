@@ -15,7 +15,9 @@ Retro 16-bit pixel-art history Shorts (1080x1920, 30 fps, English narration, chi
 
 ## New episode
 1. Copy build5.py to buildN.py. Change OUT (outN) and FINAL (epNN_slug_EN.mp4).
-2. Rewrite SCENES: 7-9 scenes, each (TITLE IN CAPS, [(spoken, caption), ...]). Spoken text spells numbers and hard names phonetically (Taino -> Tyeeno, Nina -> Neenya, 1492 -> fourteen ninety-two). Captions use digits and real spelling.
+2. Rewrite SCENES: 7-9 scenes, each (TITLE IN CAPS, [(spoken, caption), ...]). Spoken text spells numbers out (1492 -> fourteen ninety-two). Captions use digits and real spelling.
+   Spanish and Native names: write them as {Name} in the spoken text and give their IPA in the IPA dict (see build_ep07.py). tts() turns them into piper raw phonemes [[ ... ]], so they sound Spanish instead of robotic. Never use hyphenated phonetic spellings (Mon-teh-see-nos).
+   Voice: always piper en-us-ryan-high, length_scale 0.88. Jorge wants the same narrator in every episode (tested Kokoro voices in ep 7, rejected).
 3. Write make_bg and draw_scene for the new story. Reuse sprites in SP; add new ones with the same 52x84 outline() style. Every character and place gets a name label. Use maps for geography.
 4. python3 buildN.py check  -> out*/check*.png, inspect a contact sheet, fix overlaps.
 5. python3 buildN.py        -> final mp4. Keep total 70-115 s. Audio peak must stay below -1 dB.

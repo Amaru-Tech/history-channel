@@ -55,22 +55,14 @@ SCENES = [
   ("Five centuries later, his sermon is remembered as an early voice for human dignity.", "Five centuries later, his sermon is remembered as an early voice for human dignity.")]),
 ]
 
-# ---------------- narration: Kokoro (am_michael) with IPA for Spanish names ----------------
-import re as _re, soundfile as _sf
-from kokoro_onnx import Kokoro as _Kokoro
-_KK = _Kokoro(f"{D}/kokoro/kokoro-v1.0.onnx", f"{D}/kokoro/voices-v1.0.bin")
-NARRATOR = os.environ.get("HC_VOICE", "am_michael")
+# ---------------- narration: piper ryan-high (channel voice) with raw IPA for Spanish names ----------------
+import re as _re
 IPA = {"Montesinos": "mˌɔntɛsˈiːnoʊs", "Antonio": "ɑntˈoʊnjoʊ", "Córdoba": "kˈɔɹdoʊbɑ", "Pedro": "pˈeɪdɹoʊ", "de": "dɛ",
        "Bartolomé": "bˌɑɹtoʊloʊmˈeɪ", "las Casas": "lɑs kˈɑsɑs", "Taíno": "tɑˈiːnoʊ", "Burgos": "bˈʊɹɡoʊs",
        "encomienda": "ɛŋkˌoʊmiˈɛndɑ", "Santo Domingo": "sˈɑntoʊ doʊmˈiŋɡoʊ"}
-def phonemes(text):
-    parts = _re.split(r"\{([^}]+)\}", text); out = []
-    for j, p in enumerate(parts):
-        if j % 2: out.append(IPA[p])
-        elif p.strip(): out.append(_KK.tokenizer.phonemize(p, "en-us"))
-    return " ".join(x.strip() for x in out if x.strip())
-def tts(text, path):
-    a, sr = _KK.create(phonemes(text), voice=NARRATOR, speed=1.1, is_phonemes=True); _sf.write(path, a, sr, subtype="PCM_16")
+_tts_piper = tts
+def tts(text, path):  # {Name} -> [[ IPA ]], which piper reads as raw phonemes
+    _tts_piper(_re.sub(r"\{([^}]+)\}", lambda m: f"[[ {IPA[m.group(1)]} ]]", text), path)
 
 if "durs" in sys.argv:
     tot = 0
