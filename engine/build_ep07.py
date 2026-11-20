@@ -14,7 +14,7 @@ exec(_src8)  # episode 5: Bobadilla, Ferdinand, Ovando, settlers, baskets, regio
 sys.argv = sys_argv_backup
 CHECK = "check" in sys.argv
 OUT = f"{D}/out_ep07"; os.makedirs(OUT, exist_ok=True)
-FINAL = f"{D}/ep07_are_they_not_men_EN.mp4"
+FINAL = f"{D}/ep07_sermon_of_1511_EN.mp4"
 
 _src9 = open(f"{D}/build_ep06.py").read().split("# ---------------- extra sprites ----------------")[-1].split("# ---------------- maps ----------------")[0]
 exec(_src9)  # episode 6: cacica, modern islanders, zemi, hammock, barbacoa, conuco, batey, swirl, cave props
@@ -24,36 +24,53 @@ _src9c = open(f"{D}/build_ep05.py").read().split("# ---------------- backgrounds
 exec(_src9c)  # episode 5 backgrounds: court, room, village, cabin, jamaica_bay
 
 SCENES = [
- ("ARE THEY NOT MEN?", [
+ ("THE SERMON OF 1511", [
   ("Hispaniola, December twenty-first, fifteen eleven. A friar tells a packed church they are all in mortal sin.", "Hispaniola, December 21, 1511. A friar tells a packed church they are all in mortal sin."),
-  ("Their sin? How they treated the Tyeeno.", "Their sin? How they treated the Taíno.")]),
+  ("Their sin? How they treated the {Taíno}.", "Their sin? How they treated the Taíno.")]),
  ("THE DOMINICANS", [
-  ("In fifteen ten, Dominican friars led by Pedro de Kordoba arrived on the island.", "In 1510, Dominican friars led by Pedro de Córdoba arrived on the island."),
-  ("They saw Tyeeno forced to dig gold and farm for Spanish settlers.", "They saw Taíno forced to dig gold and farm for Spanish settlers."),
+  ("In fifteen ten, Dominican friars led by {Pedro} {de} {Córdoba} arrived on the island.", "In 1510, Dominican friars led by Pedro de Córdoba arrived on the island."),
+  ("They saw {Taíno} forced to dig gold and farm for Spanish settlers.", "They saw Taíno forced to dig gold and farm for Spanish settlers."),
   ("So they wrote a sermon together, and every friar signed it.", "So they wrote a sermon together, and every friar signed it.")]),
  ("THE SERMON", [
-  ("On the fourth Sunday of Advent, Friar Antonio de Mon-teh-see-nos climbed the pulpit.", "On the fourth Sunday of Advent, Friar Antonio de Montesinos climbed the pulpit."),
-  ("Are they not men? Do they not have rational souls?", "\"Are they not men? Do they not have rational souls?\""),
-  ("Are you not bound to love them as you love yourselves?", "\"Are you not bound to love them as you love yourselves?\"")]),
+  ("On the fourth Sunday of Advent, Friar {Antonio} {de} {Montesinos} climbed the pulpit.", "On the fourth Sunday of Advent, Friar Antonio de Montesinos climbed the pulpit."),
+  ("Are they not human? Have they no souls?", "\"Are they not human? Have they no souls?\""),
+  ("Are you not required to love them as you love yourselves?", "\"Are you not required to love them as you love yourselves?\"")]),
  ("OUTRAGE", [
   ("Governor Diego Columbus, son of Christopher, was among the outraged listeners.", "Governor Diego Columbus, son of Christopher, was among the outraged listeners."),
   ("The colonists demanded a retraction. Instead, the friars refused to hear their confessions.", "The colonists demanded a retraction. Instead, the friars refused to hear their confessions.")]),
  ("BEFORE THE KING", [
   ("The fight crossed the ocean to Spain.", "The fight crossed the ocean to Spain."),
-  ("King Ferdinand first called the preaching groundless and ordered the friars sent home.", "King Ferdinand first called the preaching groundless and ordered the friars sent home."),
-  ("But Mon-teh-see-nos argued the case at court, and won the king over.", "But Montesinos argued the case at court, and won the king over.")]),
+  ("King Ferdinand first called the preaching groundless, and ordered the friars sent home.", "King Ferdinand first called the preaching groundless and ordered the friars sent home."),
+  ("But {Montesinos} argued the case at court, and won the king over.", "But Montesinos argued the case at court, and won the king over.")]),
  ("THE LAWS OF BURGOS", [
-  ("On December twenty-seventh, fifteen twelve, Ferdinand issued the Laws of Burgos. Thirty-five laws.", "On December 27, 1512, Ferdinand issued the Laws of Burgos. 35 laws."),
+  ("On December twenty-seventh, fifteen twelve, Ferdinand issued the Laws of {Burgos}. Thirty-five laws.", "On December 27, 1512, Ferdinand issued the Laws of Burgos. 35 laws."),
   ("No physical or verbal abuse of Native workers. Hammocks, not the bare ground.", "No physical or verbal abuse of Native workers. Hammocks, not the bare ground."),
   ("Forty days of rest after five months of mining. No heavy labor for women more than four months pregnant.", "40 days of rest after 5 months of mining. No heavy labor for women more than 4 months pregnant.")]),
  ("ONLY ON PAPER", [
-  ("But the laws kept the encomienda, and they were poorly enforced.", "But the laws kept the encomienda, and they were poorly enforced."),
-  ("Still, one man who heard that sermon never forgot it: Bartolomay de las Kahsas.", "Still, one man who heard that sermon never forgot it: Bartolomé de las Casas."),
-  ("He gave up his own encomienda and spent his life defending Native peoples.", "He gave up his own encomienda and spent his life defending Native peoples.")]),
+  ("But the laws kept the {encomienda}, and they were poorly enforced.", "But the laws kept the encomienda, and they were poorly enforced."),
+  ("Still, one man who heard that sermon never forgot it: {Bartolomé} {de} {las Casas}.", "Still, one man who heard that sermon never forgot it: Bartolomé de las Casas."),
+  ("He gave up his own {encomienda}, and spent his life defending Native peoples.", "He gave up his own encomienda and spent his life defending Native peoples.")]),
  ("A VOICE THAT STILL STANDS", [
-  ("Today a fifteen-meter statue of Mon-teh-see-nos faces the sea in Santo Domingo, a gift from Mexico.", "Today a 15-meter statue of Montesinos faces the sea in Santo Domingo, a gift from Mexico."),
-  ("Five centuries later, his question still echoes. Are they not men?", "Five centuries later, his question still echoes. Are they not men?")]),
+  ("Today, a fifteen-meter statue of {Montesinos} faces the sea in {Santo Domingo}, a gift from Mexico.", "Today a 15-meter statue of Montesinos faces the sea in Santo Domingo, a gift from Mexico."),
+  ("Five centuries later, his sermon is remembered as an early voice for human dignity.", "Five centuries later, his sermon is remembered as an early voice for human dignity.")]),
 ]
+
+# ---------------- narration: Kokoro (am_michael) with IPA for Spanish names ----------------
+import re as _re, soundfile as _sf
+from kokoro_onnx import Kokoro as _Kokoro
+_KK = _Kokoro(f"{D}/kokoro/kokoro-v1.0.onnx", f"{D}/kokoro/voices-v1.0.bin")
+NARRATOR = os.environ.get("HC_VOICE", "am_michael")
+IPA = {"Montesinos": "mˌɔntɛsˈiːnoʊs", "Antonio": "ɑntˈoʊnjoʊ", "Córdoba": "kˈɔɹdoʊbɑ", "Pedro": "pˈeɪdɹoʊ", "de": "dɛ",
+       "Bartolomé": "bˌɑɹtoʊloʊmˈeɪ", "las Casas": "lɑs kˈɑsɑs", "Taíno": "tɑˈiːnoʊ", "Burgos": "bˈʊɹɡoʊs",
+       "encomienda": "ɛŋkˌoʊmiˈɛndɑ", "Santo Domingo": "sˈɑntoʊ doʊmˈiŋɡoʊ"}
+def phonemes(text):
+    parts = _re.split(r"\{([^}]+)\}", text); out = []
+    for j, p in enumerate(parts):
+        if j % 2: out.append(IPA[p])
+        elif p.strip(): out.append(_KK.tokenizer.phonemize(p, "en-us"))
+    return " ".join(x.strip() for x in out if x.strip())
+def tts(text, path):
+    a, sr = _KK.create(phonemes(text), voice=NARRATOR, speed=1.1, is_phonemes=True); _sf.write(path, a, sr, subtype="PCM_16")
 
 if "durs" in sys.argv:
     tot = 0
@@ -284,7 +301,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
         if li == 0:
             label(d, "4TH SUNDAY OF ADVENT", 270, 250, K, YEL, F16); label(d, "DECEMBER 21, 1511", 270, 290, WHITE, K, F16)
         elif li == 1:
-            quote_box(d, ["ARE THEY NOT MEN?", "RATIONAL SOULS?"][: 1 + (prog > 0.45)], 240)
+            quote_box(d, ["ARE THEY NOT HUMAN?", "HAVE THEY NO SOULS?"][: 1 + (prog > 0.45)], 240)
         else:
             quote_box(d, ["LOVE THEM AS", "YOURSELVES"], 240)
     elif i == 3:
@@ -392,7 +409,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
             label(d, "SANTO DOMINGO", 120, 250, K, YEL, F16); label(d, "GIFT FROM MEXICO, 1982", 130, 380, WHITE, K)
             label(d, "VISITORS", 120, 630, WHITE, K)
         else:
-            quote_box(d, ["ARE THEY", "NOT MEN?"], 200)
+            quote_box(d, ["A VOICE FOR", "HUMAN DIGNITY"], 160)
             if prog > 0.45: label(d, "FOLLOW FOR MORE HISTORY", 192, 610, WHITE, RED, F16)
 # ---------------- render ----------------
 if CHECK:
