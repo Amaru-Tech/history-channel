@@ -32,6 +32,7 @@ exec(_src12)  # episode 9: Ponce, chroniclers, old man, archers, fountain, stamp
 
 SCENES = [
  ("AROUND THE WORLD", [
+  ("The first voyage around the world. Ferdinand Magellan.", "The First Voyage Around the World: Ferdinand Magellan"),
   ("In September fifteen twenty-two, a battered ship limped into Spain with just eighteen men on board.", "In September 1522, a battered ship limped into Spain with just 18 men on board."),
   ("They had just sailed all the way around the world.", "They had just sailed all the way around the world.")]),
  ("THE PLAN", [
@@ -256,7 +257,8 @@ def globe(f, title, p0, p1, prog, labels=(), dots=(), h=300):
 def make_bg(i, li):
     c = Image.new("RGBA", (CW, CH)); d = ImageDraw.Draw(c)
     if i == 0:
-        if li == 0: day_sea(d, 600); town(d, 600, 300, CW); dock(d, 540, 700)
+        if li == 0: day_sea(d, 600)
+        elif li == 1: day_sea(d, 600); town(d, 600, 300, CW); dock(d, 540, 700)
         else: night_sea(d, 600)
     elif i == 1:
         if li < 2: court(d)
@@ -289,7 +291,14 @@ def march(c, f, x0, n, keys, base=FEET, dx=58, speed=0.6, flip=False):
 def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
     d.fontmode = "1"; prog = min(1.0, lt / max(0.1, ldur))
     if i == 0:
-        if li == 0:
+        if li == 0:  # title card: what this episode is about
+            gulls(d, f, 2, 450)
+            c.alpha_composite(globe(f, "1519-1522", 0, 1, 1.0), (25, 110))
+            waves(d, f, 600, (200, 230, 250))
+            put(c, "battered", 280 + bob(f, 5, 0.05), 650 + bob(f, 3, 0.1))
+            put(c, "mag0", 40, FEET, sc=2); label(d, "FERDINAND MAGELLAN", 160, 545, GOLD)
+            label(d, "THE FIRST VOYAGE", 270, 450, K, YEL, F16); label(d, "AROUND THE WORLD", 270, 488, K, YEL, F16)
+        elif li == 1:
             clouds(d, f, 150, seed=2); gulls(d, f, 3, 300)
             vic = tint(SP["battered"], 0.9); put(c, vic, 40 + min(1, prog * 1.4) * 60, 660 + bob(f, 3, 0.1))
             label(d, "VICTORIA", 150, 470, GOLD)
