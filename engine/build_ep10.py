@@ -109,6 +109,16 @@ def rat():
     d.ellipse((4, 3, 20, 13), fill=(110, 100, 96)); d.ellipse((17, 4, 25, 11), fill=(110, 100, 96)); R(d, (23, 6, 24, 7), K)
     d.ellipse((17, 2, 21, 6), fill=(200, 150, 150)); d.line([(4, 9), (0, 5)], fill=(200, 150, 150))
     return outline(im)
+def battered():  # Victoria after three years at sea: upright hull, patched sails, holes
+    s = SP["ship"].copy(); d = ImageDraw.Draw(s); rnd = random.Random(7)
+    for _ in range(14):
+        x, y = rnd.randint(30, 140), rnd.randint(100, 125)
+        if s.getpixel((x, y))[3] > 0: R(d, (x, y, x + 3, y + 2), K)
+    for _ in range(5):
+        x, y = rnd.randint(40, 120), rnd.randint(20, 80)
+        if s.getpixel((x, y))[:3] == WHITE[:3] or s.getpixel((x, y))[3] > 0: R(d, (x, y, x + 6, y + 5), (200, 180, 140))
+    return s
+SP["battered"] = battered()
 SP.update({"mag0": magellan_sprite(0), "mag1": magellan_sprite(1), "elc0": elcano_sprite(0), "elc1": elcano_sprite(1),
            "charles": charles_sprite(), "lapu0": lapulapu(0), "lapu1": lapulapu(1), "vis0": visayan(0), "vis1": visayan(1),
            "piga": chronicler((60, 80, 60), (40, 56, 40), (90, 60, 40), beard=False), "rat": rat()})
@@ -281,7 +291,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
     if i == 0:
         if li == 0:
             clouds(d, f, 150, seed=2); gulls(d, f, 3, 300)
-            vic = tint(SP["wreck"], 0.85); put(c, vic, 40 + min(1, prog * 1.4) * 60, 660 + bob(f, 3, 0.1))
+            vic = tint(SP["battered"], 0.9); put(c, vic, 40 + min(1, prog * 1.4) * 60, 660 + bob(f, 3, 0.1))
             label(d, "VICTORIA", 150, 470, GOLD)
             for k in range(6): put(c, "sailor", 300 + k * 38, 700 - (k % 2) * 6, flip=True)
             label(d, "SPAIN, 1522", 270, 250, K, YEL, F16)
@@ -289,7 +299,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
         else:
             c.alpha_composite(globe(f, "1519-1522", 0, 1, min(1, prog * 1.3), dots=[SANLUCAR], labels=[("SPAIN", 8, 47, K, YEL)]), (25, 130))
             gulls(d, f, 2, 470); waves(d, f, 600, (200, 230, 250))
-            put(c, "wreck", 190 + bob(f, 5, 0.05), 640 + bob(f, 3, 0.1)); label(d, "VICTORIA", 270, 520, GOLD)
+            put(c, "battered", 190 + bob(f, 5, 0.05), 640 + bob(f, 3, 0.1)); label(d, "VICTORIA", 270, 520, GOLD)
             if prog > 0.5: label(d, "ALL THE WAY AROUND", 270, 470, WHITE, RED_D, F16)
     elif i == 1:
         if li < 2:
@@ -403,7 +413,7 @@ def draw_scene(i, c, d, f, t, li, lt, ldur, sdur):
     elif i == 8:
         if li == 0:
             clouds(d, f, 150, seed=2); gulls(d, f, 3, 300)
-            put(c, "wreck", 30, 640 + bob(f, 3, 0.1)); label(d, "VICTORIA", 110, 470, GOLD)
+            put(c, "battered", 30, 640 + bob(f, 3, 0.1)); label(d, "VICTORIA", 110, 470, GOLD)
             for k in range(4): clove_sack(d, 250 + k * 64, 745 - (k % 2) * 6)
             label(d, "CLOVES", 360, 640, WHITE, K)
             label(d, "SEVILLE, 1522", 270, 250, K, YEL, F16)
